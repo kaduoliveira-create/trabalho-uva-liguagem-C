@@ -4,11 +4,6 @@
  * Paradigma: Estruturado
  * Linguagem: C
  *
- * Problema 1: Ler nome e notas de n alunos, calcular médias individuais,
- * determinar situação (Aprovado/Reprovado), exibir listagem ordenada,
- * calcular média geral, maior e menor nota.
- */
-
 /* -------------------------------------------------------
  * BIBLIOTECAS UTILIZADAS
  * -------------------------------------------------------
