@@ -1,0 +1,260 @@
+/*
+ ================================================================
+ SISTEMA DE NOTAS E MÉDIAS DE ALUNOS
+ Disciplina : Paradigmas de Linguagens de Programação
+ Paradigma  : Estruturado
+ Linguagem  : C
+ ================================================================
+*/
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#define MAX_ALUNOS     100
+#define MAX_NOME       80
+#define NUM_NOTAS      4
+#define MEDIA_APROVACAO 6.0f
+
+typedef struct {
+    char  nome[MAX_NOME];
+    float notas[NUM_NOTAS];
+    float media;
+    int   aprovado;
+} Aluno;
+
+/* ============================================================
+ PROTÓTIPOS
+ ============================================================ */
+void  ler_alunos           (Aluno alunos[], int *n);
+void  limpar_buffer        (void);
+float calcular_media       (float notas[], int qtd);
+void  processar_alunos     (Aluno alunos[], int n);
+void  ordenar_por_media    (Aluno alunos[], int n);
+void  exibir_listagem      (const Aluno alunos[], int n);
+void  exibir_estatisticas  (const Aluno alunos[], int n);
+float calcular_media_geral (const Aluno alunos[], int n);
+float maior_nota           (const Aluno alunos[], int n);
+float menor_nota           (const Aluno alunos[], int n);
+
+/* ============================================================
+ BLOCO 5 — FUNÇÃO PRINCIPAL (main)
+ ============================================================ */
+int main(void) {
+    Aluno alunos[MAX_ALUNOS];
+    int   n = 0;
+
+    printf("==============================================\n");
+    printf("   SISTEMA DE NOTAS E MÉDIAS DE ALUNOS\n");
+    printf("==============================================\n\n");
+
+    /* --------------------------------------------------
+       ENTRADA DE DADOS — Scanner interativo
+       Para voltar aos dados pré-carregados, substitua
+       esta linha pelo bloco de strcpy/notas manual.
+    -------------------------------------------------- */
+    ler_alunos(alunos, &n);
+
+    if (n == 0) {
+        printf("Nenhum aluno cadastrado. Encerrando.\n");
+        return 0;
+    }
+
+    /* --------------------------------------------------
+       PROCESSAMENTO
+    -------------------------------------------------- */
+    processar_alunos  (alunos, n);
+    ordenar_por_media (alunos, n);
+
+    /* --------------------------------------------------
+       SAÍDA DE DADOS
+    -------------------------------------------------- */
+    exibir_listagem    (alunos, n);
+    exibir_estatisticas(alunos, n);
+
+    return 0;
+}
+
+/* ============================================================
+ BLOCO 6 — FUNÇÕES DE ENTRADA
+ ============================================================ */
+
+/*
+ * limpar_buffer
+ * -------------
+ * Descarta caracteres presos no buffer do teclado
+ * após um scanf, evitando leituras incorretas.
+ */
+void limpar_buffer(void) {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF);
+}
+
+/*
+ * ler_alunos
+ * ----------
+ * ENTRADA : alunos[] → vetor a ser preenchido
+ *           *n       → ponteiro que receberá a quantidade
+ * SAÍDA   : nenhum retorno — preenche alunos[] e *n
+ *
+ * O QUE FAZ:
+ *   1. Pergunta quantos alunos serão cadastrados.
+ *   2. Para cada aluno, solicita o nome completo.
+ *   3. Solicita as 4 notas individualmente,
+ *      rejeitando valores fora do intervalo 0,0–10,0.
+ *   4. Confirma cada aluno cadastrado com uma mensagem.
+ *
+ * COMO USAR:
+ *   - Execute o programa.
+ *   - Digite a quantidade de alunos e pressione Enter.
+ *   - Para cada aluno, informe o nome e as 4 notas
+ *     quando solicitado.
+ *   - Notas inválidas serão rejeitadas automaticamente.
+ */
+void ler_alunos(Aluno alunos[], int *n) {
+
+    /* --- Quantidade de alunos --- */
+    do {
+        printf("Quantos alunos deseja cadastrar (1 a %d)? ", MAX_ALUNOS);
+        scanf("%d", n);
+        limpar_buffer();
+        if (*n <= 0 || *n > MAX_ALUNOS)
+            printf("[ERRO] Número inválido. Digite entre 1 e %d.\n\n",
+                   MAX_ALUNOS);
+    } while (*n <= 0 || *n > MAX_ALUNOS);
+
+    /* --- Dados de cada aluno --- */
+    for (int i = 0; i < *n; i++) {
+
+        printf("\n----------------------------------------------\n");
+        printf(" ALUNO %d DE %d\n", i + 1, *n);
+        printf("----------------------------------------------\n");
+
+        /* Nome completo */
+        printf(" Nome completo: ");
+        fgets(alunos[i].nome, MAX_NOME, stdin);
+        alunos[i].nome[strcspn(alunos[i].nome, "\n")] = '\0'; /* remove '\n' */
+
+        /* 4 notas com validação */
+        for (int j = 0; j < NUM_NOTAS; j++) {
+            do {
+                printf(" Nota %d (0,0 a 10,0): ", j + 1);
+                scanf("%f", &alunos[i].notas[j]);
+                limpar_buffer();
+
+                if (alunos[i].notas[j] < 0.0f || alunos[i].notas[j] > 10.0f)
+                    printf(" [ERRO] Nota fora do intervalo. Tente novamente.\n");
+
+            } while (alunos[i].notas[j] < 0.0f || alunos[i].notas[j] > 10.0f);
+        }
+
+        printf(" [OK] Aluno \"%s\" cadastrado com sucesso!\n", alunos[i].nome);
+    }
+
+    printf("\n==============================================\n");
+    printf(" %d aluno(s) cadastrado(s). Processando...\n", *n);
+    printf("==============================================\n");
+}
+
+/* ============================================================
+ BLOCO 7 — FUNÇÕES DE PROCESSAMENTO
+ ============================================================ */
+
+float calcular_media(float notas[], int qtd) {
+    float soma = 0.0f;
+    for (int i = 0; i < qtd; i++)
+        soma += notas[i];
+    return soma / (float)qtd;
+}
+
+void processar_alunos(Aluno alunos[], int n) {
+    for (int i = 0; i < n; i++) {
+        alunos[i].media    = calcular_media(alunos[i].notas, NUM_NOTAS);
+        alunos[i].aprovado = (alunos[i].media >= MEDIA_APROVACAO) ? 1 : 0;
+    }
+}
+
+void ordenar_por_media(Aluno alunos[], int n) {
+    for (int i = 0; i < n - 1; i++) {
+        int maior_idx = i;
+        for (int j = i + 1; j < n; j++)
+            if (alunos[j].media > alunos[maior_idx].media)
+                maior_idx = j;
+        if (maior_idx != i) {
+            Aluno tmp        = alunos[i];
+            alunos[i]        = alunos[maior_idx];
+            alunos[maior_idx] = tmp;
+        }
+    }
+}
+
+/* ============================================================
+ BLOCO 8 — FUNÇÕES DE CÁLCULO AUXILIAR
+ ============================================================ */
+
+float calcular_media_geral(const Aluno alunos[], int n) {
+    float soma = 0.0f;
+    for (int i = 0; i < n; i++)
+        soma += alunos[i].media;
+    return soma / (float)n;
+}
+
+float maior_nota(const Aluno alunos[], int n) {
+    float max = alunos[0].notas[0];
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < NUM_NOTAS; j++)
+            if (alunos[i].notas[j] > max)
+                max = alunos[i].notas[j];
+    return max;
+}
+
+float menor_nota(const Aluno alunos[], int n) {
+    float min = alunos[0].notas[0];
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < NUM_NOTAS; j++)
+            if (alunos[i].notas[j] < min)
+                min = alunos[i].notas[j];
+    return min;
+}
+
+/* ============================================================
+ BLOCO 9 — FUNÇÕES DE SAÍDA
+ ============================================================ */
+
+void exibir_listagem(const Aluno alunos[], int n) {
+    printf("\n==============================================\n");
+    printf("  LISTAGEM DE ALUNOS (ordenada por média)\n");
+    printf("==============================================\n");
+    printf("%-4s %-20s %6s %6s %6s %6s %7s %-12s\n",
+           "Pos", "Nome", "N1", "N2", "N3", "N4", "Média", "Situação");
+    printf("----------------------------------------------------------------------\n");
+    for (int i = 0; i < n; i++) {
+        printf("%-4d %-20s %6.2f %6.2f %6.2f %6.2f %7.2f %-12s\n",
+               i + 1,
+               alunos[i].nome,
+               alunos[i].notas[0], alunos[i].notas[1],
+               alunos[i].notas[2], alunos[i].notas[3],
+               alunos[i].media,
+               alunos[i].aprovado ? "APROVADO" : "REPROVADO");
+    }
+    printf("----------------------------------------------------------------------\n");
+}
+
+void exibir_estatisticas(const Aluno alunos[], int n) {
+    int aprovados  = 0;
+    int reprovados = 0;
+    for (int i = 0; i < n; i++) {
+        if (alunos[i].aprovado) aprovados++;
+        else                    reprovados++;
+    }
+    printf("\n==============================================\n");
+    printf("         ESTATÍSTICAS DA TURMA\n");
+    printf("==============================================\n");
+    printf(" Total de alunos : %d\n",   n);
+    printf(" Aprovados       : %d\n",   aprovados);
+    printf(" Reprovados      : %d\n",   reprovados);
+    printf(" Média geral     : %.2f\n", calcular_media_geral(alunos, n));
+    printf(" Maior nota      : %.2f\n", maior_nota(alunos, n));
+    printf(" Menor nota      : %.2f\n", menor_nota(alunos, n));
+    printf("==============================================\n");
+}
